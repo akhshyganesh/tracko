@@ -256,8 +256,8 @@ fn find_harness(name: &str, custom: Option<&str>) -> Result<PathBuf, String> {
     if let Some(c) = custom.map(str::trim).filter(|c| !c.is_empty()) {
         let p = PathBuf::from(c);
         let stem = p.file_stem().and_then(|s| s.to_str()).unwrap_or("").to_ascii_lowercase();
-        if !stem.starts_with(name) {
-            return Err(format!("That path doesn't point to {name}"));
+        if stem != name {
+            return Err(format!("The file must be named {name}, like {name} or {name}.exe"));
         }
         return if p.exists() { Ok(p) } else { Err(format!("{name} not found at {}", p.display())) };
     }
@@ -421,7 +421,7 @@ struct ToolCall {
 
 fn random_token() -> String {
     let mut b = [0u8; 24];
-    let _ = getrandom::getrandom(&mut b);
+    getrandom::getrandom(&mut b).expect("no OS randomness for the MCP token");
     b.iter().map(|x| format!("{x:02x}")).collect()
 }
 

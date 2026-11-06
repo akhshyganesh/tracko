@@ -2,7 +2,7 @@
 
 A personal tracker you talk to. Type a one-liner, paste a messy paragraph or drop in a screenshot. tracko splits it into tasks, notes and done items, files the chat in the right bucket (or asks you which one), and answers questions like "what did I do last Friday?".
 
-tracko is free and open source under the [MIT licence](LICENSE).
+tracko is free and open source under the [MIT license](LICENSE).
 
 It's a small desktop app for Windows, macOS and Linux, built with [Tauri](https://tauri.app). It uses the system's own web view instead of shipping a browser, so the installer is a few MB and idle memory stays low.
 
@@ -107,7 +107,7 @@ ui/src/providers.js  every connection behind one shape (status, models, efforts,
 ui/src/harness.js    shared harness plumbing: start a program, read lines, answer MCP tool calls
 ui/src/claude-code.js Claude Code harness adapter
 ui/src/codex.js      Codex harness adapter (JSON-RPC client for codex app-server)
-ui/src/tools.js      tracko's tools, shared by both providers
+ui/src/tools.js      tracko's tools, shared by every connection
 ui/src/bridge.js     calls into the Rust side (files, key, notifications)
 scripts/build-ui.mjs bundles ui/ into dist/ with esbuild
 src-tauri/           the Rust shell: window, data file, key storage, Claude API proxy, harness runner, local MCP server
@@ -116,8 +116,8 @@ assets/              app icon source (SVG) and rendered PNG/ICO files
 
 ## Contributing
 
-Issues and pull requests are welcome. For a change to layout, colours or behaviour, update `DESIGN.md` in the same pull request. Please report security problems privately through [GitHub's security advisories](https://github.com/akhshyganesh/tracko/security/advisories/new) rather than a public issue.
+Issues and pull requests are welcome. For a change to layout, colors or behavior, update `DESIGN.md` in the same pull request. Please report security problems privately through [GitHub's security advisories](https://github.com/akhshyganesh/tracko/security/advisories/new) rather than a public issue.
 
-## Licence
+## License
 
 [MIT](LICENSE)
