@@ -31,17 +31,25 @@ export async function keyStatus() {
 }
 export const setKey = (key) => invoke('set_api_key', { key });
 
-// App version and update checks (GitHub Releases, through Rust).
 export async function appVersion() {
   if (!inApp) return 'dev';
   const { getVersion } = await import('@tauri-apps/api/app');
   return getVersion();
 }
-export const latestRelease = (repo) => (inApp ? invoke('latest_release', { repo }) : null);
-export async function openLink(url) {
-  if (!inApp) { window.open(url, '_blank'); return; }
-  const { openUrl } = await import('@tauri-apps/plugin-opener');
-  return openUrl(url);
+
+// In-app updates through Tauri's updater plugin. Resolves to null when no newer release is out.
+export async function checkForUpdate() {
+  const { check } = await import('@tauri-apps/plugin-updater');
+  return check();
+}
+
+export const downloadUpdate = (update) => update.download();
+
+// Verifies and installs a downloaded update, then restarts. On Windows the installer quits tracko itself.
+export async function installUpdate(update) {
+  await update.install();
+  const { relaunch } = await import('@tauri-apps/plugin-process');
+  await relaunch();
 }
 export const clearKey = () => invoke('clear_api_key');
 

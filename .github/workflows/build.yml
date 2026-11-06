@@ -1,23 +1,31 @@
-# Builds tracko for Windows, macOS (Apple Silicon + Intel) and Linux (x64 + ARM).
-# Push a tag like v0.1.0 to create a draft GitHub release with all installers,
-# or run it by hand from the Actions tab to just get the files as build artifacts.
+# Builds tracko for Windows, macOS (Apple Silicon) and Linux (x64 + ARM).
+# Pushes to main, pull requests and manual runs build the installers as artifacts.
+# A tag like v0.2.0 also creates a draft GitHub release with every installer and the
+# signed latest.json feed the in-app updater reads once the release is published.
 name: build
 
 on:
   push:
+    branches: [main]
     tags: ['v*']
+  pull_request:
   workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_type != 'tag' }}
 
 jobs:
   build:
     permissions:
       contents: write
+    env:
+      HAS_SIGNING_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY != '' }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - { os: macos-latest, target: aarch64-apple-darwin, name: macos-arm64 }
-          - { os: macos-latest, target: x86_64-apple-darwin, name: macos-x64 }
           - { os: windows-latest, target: x86_64-pc-windows-msvc, name: windows-x64 }
           - { os: ubuntu-22.04, target: x86_64-unknown-linux-gnu, name: linux-x64 }
           - { os: ubuntu-22.04-arm, target: aarch64-unknown-linux-gnu, name: linux-arm64 }
@@ -47,16 +55,30 @@ jobs:
 
       - run: npm ci
 
+      # Pull requests from forks get no secrets, so build them without the signed updater files.
+      - name: Skip updater signing without the key
+        if: env.HAS_SIGNING_KEY != 'true'
+        shell: bash
+        run: |
+          if [ "${{ github.ref_type }}" = tag ]; then
+            echo "::error::A release needs the TAURI_SIGNING_PRIVATE_KEY secret, or installed copies can't update to it."
+            exit 1
+          fi
+          echo '{"bundle":{"createUpdaterArtifacts":false}}' > no-updater.json
+          echo "EXTRA_ARGS=--config no-updater.json" >> "$GITHUB_ENV"
+
       - name: Build
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
           releaseName: ${{ github.ref_type == 'tag' && format('tracko {0}', github.ref_name) || '' }}
-          releaseBody: 'Installers for Windows, macOS and Linux.'
+          releaseBody: 'Installers for Windows, macOS and Linux. Existing installs update from inside the app once this release is published.'
           releaseDraft: true
-          args: --target ${{ matrix.target }}
+          args: --target ${{ matrix.target }} ${{ env.EXTRA_ARGS }}
 
       - uses: actions/upload-artifact@v4
         with:

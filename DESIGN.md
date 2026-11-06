@@ -88,4 +88,4 @@ Everything is tuned for comfort rather than maximum contrast. Text is off-white 
 - **Requests and key.** Every request goes through Rust, which adds the API key and only allows `api.anthropic.com`. The key lives in the OS credential store.
 - **Data.** One JSON file in the app data folder. Writes are atomic, with a `.bak` copy made once per session.
 - **Default model.** Opus 5.5 at low effort, with server-side refusal fallback on Opus and Sonnet.
-- **Builds.** GitHub Actions builds for Windows x64, macOS arm64 and x64, and Linux x64 and arm64.
+- **Builds.** GitHub Actions builds for Windows x64, macOS arm64 (Apple Silicon only), and Linux x64 and arm64.

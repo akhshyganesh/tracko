@@ -84,16 +84,25 @@ Installers land in `src-tauri/target/release/bundle/`:
 | macOS | `.app` and `.dmg` |
 | Linux | `.deb`, `.rpm` and `.AppImage` |
 
-### Update checks
+### Updates
 
-The download icon at the bottom of the sidebar checks this repo's GitHub Releases for a newer version, at startup and every 6 hours. It shows a dot when one is out, and clicking it opens the release page. If you fork tracko, point `UPDATE_REPO` in `ui/src/app.js` at your fork, or set it to `''` to turn checks off.
+tracko updates itself. At startup and every 6 hours it checks the `latest.json` file on this repo's latest GitHub release. When a newer version is out, the download icon at the bottom of the sidebar shows a dot and a message offers Install. Installing downloads the update, checks its signature against the public key in `src-tauri/tauri.conf.json`, installs it and restarts tracko. On Linux the in-app update is aimed at the AppImage. If you installed the `.deb` or `.rpm`, get the new package from the release page.
+
+To ship an update:
+
+1. Bump `version` in `package.json`, `src-tauri/tauri.conf.json` and `src-tauri/Cargo.toml`.
+2. Push a tag for it, for example `git tag v0.2.0 && git push --tags`.
+3. When the workflow finishes, publish the draft release on GitHub. Installed copies only see a release once it is published.
+
+The workflow signs the update files with the `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` repository secrets. If you fork tracko, make your own key with `npx tauri signer generate`, put the public key and your repo's URL in `plugins.updater` in `src-tauri/tauri.conf.json`, and add the two secrets to your fork.
 
 ### All three OSes at once
 
-`.github/workflows/build.yml` builds on GitHub's Windows, macOS and Linux machines. It covers macOS on Apple Silicon and Intel, and Linux on x64 and ARM.
+`.github/workflows/build.yml` builds on GitHub's Windows, macOS and Linux machines. It covers macOS on Apple Silicon (Intel Macs aren't built), Windows on x64, and Linux on x64 and ARM.
 
-- To get a draft release with every installer, push a tag: `git tag v0.1.0 && git push --tags`.
-- To get the files as build artifacts, run the workflow by hand from the Actions tab.
+- Every push to `main` and every pull request builds the installers. Download them from the run's artifacts.
+- A version tag also makes a draft release with every installer (see Updates above).
+- To build on demand, run the workflow by hand from the Actions tab.
 
 Signing needs an Apple Developer ID and a Windows code-signing certificate, both added as GitHub secrets. See [Tauri's distribution guide](https://tauri.app/distribute/).
 
