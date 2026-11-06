@@ -1080,19 +1080,30 @@ function accentCtl(){
  return `<div class="sw">${ACCENTS.map(([c,n])=>`<button class="${cur===c?'on':''}" style="background:${c}" data-act="accent" data-c="${c}" title="${n}"></button>`).join('')}<span class="swsep"></span><input type="color" data-accent value="${cur}" title="Pick any color"></div>`;
 }
 // ---------- updates ----------
-// GitHub repo whose latest release the update check compares against. Forks can point this at their own repo or blank it to turn checks off.
-const UPDATE_REPO='akhshyganesh/tracko';
-const upd={current:'',latest:null,url:null,checked:0};
-const verGt=(a,b)=>{const x=a.replace(/^v/,'').split('.').map(Number),y=b.replace(/^v/,'').split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return (x[i]||0)>(y[i]||0)}return false};
+// The release feed and the public key that verifies downloads live in tauri.conf.json (plugins.updater).
+const upd={current:'',latest:null,update:null,busy:false};
 async function checkUpdate(manual){
  if(!upd.current)upd.current=await bridge.appVersion();
- if(!UPDATE_REPO){if(manual)flashMsg(`You're on tracko v${upd.current}. Update checks start once the project has a GitHub repo.`);return}
+ if(!bridge.inApp){if(manual)flashMsg('Updates only work in the desktop app.');return}
+ if(upd.busy)return;
  try{
-  const r=await bridge.latestRelease(UPDATE_REPO);upd.checked=Date.now();
-  if(r&&verGt(r.tag,upd.current)){upd.latest=r.tag.replace(/^v/,'');upd.url=r.url}else{upd.latest=null}
+  const u=await bridge.checkForUpdate(),was=upd.latest;
+  upd.update?.close().catch(e=>console.error('[Update] close failed',e));upd.update=u;upd.latest=u?u.version:null;
   renderSide();
-  if(manual)flashMsg(upd.latest?`tracko v${upd.latest} is available`:`You're up to date (v${upd.current})`,upd.latest?{label:'Download',fn:()=>bridge.openLink(upd.url)}:null);
- }catch(e){if(manual)flashMsg("Couldn't check for updates: "+(e?.message||e))}
+  if(u&&(manual||u.version!==was))flashMsg(`tracko v${u.version} is ready to install`,{label:'Install',fn:installUpdate});
+  else if(manual)flashMsg(`You're up to date (v${upd.current})`);
+ }catch(e){console.error('[Update] check failed',e);if(manual)flashMsg("Couldn't check for updates: "+(e?.message||e))}
+}
+async function installUpdate(){
+ if(!upd.update||upd.busy)return;
+ upd.busy=true;renderSide();flashMsg(`Downloading tracko v${upd.latest}. It restarts when the update is installed.`);
+ try{
+  await bridge.downloadUpdate(upd.update);
+  // Installing quits or restarts tracko without a close event, so save now and stop if the save fails.
+  clearTimeout(saveTimer);await saving;await bridge.saveState(JSON.stringify(S));
+  await bridge.installUpdate(upd.update);
+ }
+ catch(e){upd.busy=false;renderSide();console.error('[Update] install failed',e);flashMsg("Couldn't install the update: "+(e?.message||e))}
 }
 function renderTopbar(){
  const t=$('#topbar');if(!t)return;
@@ -1206,7 +1217,7 @@ function renderSide(){
  <div class="foot">${narch?`<button class="nav ${ui.view==='archive'?'on':''}" data-act="nav" data-view="archive">${ico('archive')} Archived<span class="count">${narch}</span></button>`:''}
   <div class="footrow"><button class="nav ${ui.setOpen?'on':''}" data-act="settings" data-tab="general">${ico('gear')} Settings</button>
   <button class="ib" data-act="theme" title="${dark?'Light':'Dark'} mode">${ico(dark?'sun':'moon')}</button>
-  <button class="ib upd ${upd.latest?'has':''}" data-act="update" title="${upd.latest?`Update available: v${esc(upd.latest)}`:`tracko v${esc(upd.current||'')}. Check for updates`}">${ico('download')}</button></div>
+  <button class="ib upd ${upd.latest?'has':''}" data-act="update" title="${upd.busy?`Installing v${esc(upd.latest)}`:upd.latest?`Install update: v${esc(upd.latest)}`:`tracko v${esc(upd.current||'')}. Check for updates`}">${ico('download')}</button></div>
  </div>`;
 }
 function renderStream(toBottom){
@@ -1503,7 +1514,7 @@ document.addEventListener('click',e=>{
   case 'jump':{const n=document.querySelector(`#stream [data-mid="${el.dataset.msg}"]`);if(n){n.scrollIntoView({block:'center',behavior:'smooth'});n.classList.remove('flashm');void n.offsetWidth;n.classList.add('flashm')}}break;
   case 'ndismiss':prefs.dismissed={...(prefs.dismissed||{}),[el.dataset.k]:todayKey()};savePrefs();renderNudges();break;
   case 'ptab':ui.ptab=el.dataset.k;renderPanel();break;
-  case 'update':if(upd.latest&&upd.url)bridge.openLink(upd.url);else checkUpdate(true);break;
+  case 'update':if(upd.update)installUpdate();else checkUpdate(true);break;
   case 'cfok':{const r=askResolve;askResolve=null;$('#modal').classList.remove('on');if(r)r(true)}break;
   case 'cfno':closeModal();break;
   case 'recall':ui.recall=el.dataset.k;refresh();break;

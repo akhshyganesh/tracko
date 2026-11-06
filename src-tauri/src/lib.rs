@@ -517,35 +517,6 @@ async fn harness_file(app: AppHandle, name: String, content: String) -> Result<S
     Ok(path.display().to_string())
 }
 
-// ---------- update check (GitHub Releases) ----------
-#[derive(Serialize)]
-struct Release {
-    tag: String,
-    url: String,
-}
-
-#[tauri::command]
-async fn latest_release(http: State<'_, Http>, repo: String) -> Result<Release, String> {
-    let ok = repo.split('/').count() == 2 && repo.chars().all(|c| c.is_ascii_alphanumeric() || "-_./".contains(c));
-    if !ok {
-        return Err("Bad repo name".into());
-    }
-    let res = http.0
-        .get(format!("https://api.github.com/repos/{repo}/releases/latest"))
-        .header("Accept", "application/vnd.github+json")
-        .send()
-        .await
-        .map_err(|e| e.to_string())?;
-    if !res.status().is_success() {
-        return Err(format!("GitHub returned {}", res.status()));
-    }
-    let v: serde_json::Value = serde_json::from_str(&res.text().await.map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
-    Ok(Release {
-        tag: v["tag_name"].as_str().unwrap_or("").to_string(),
-        url: v["html_url"].as_str().unwrap_or("").to_string(),
-    })
-}
-
 #[derive(Serialize)]
 struct McpInfo {
     url: String,
@@ -589,6 +560,8 @@ pub fn run() {
         )
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .manage(Procs::default())
         .manage(Http(http))
         .manage(BackedUp(AtomicBool::new(false)))
@@ -613,7 +586,6 @@ pub fn run() {
             clear_api_key,
             claude_fetch,
             harness_find,
-            latest_release,
             harness_file,
             proc_spawn,
             proc_write,

@@ -56,6 +56,18 @@
       "webviewInstallMode": {
         "type": "downloadBootstrapper"
       }
+    },
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQ3QjdEOTBEQkFBRDVBMkQKUldRdFdxMjZEZG0zMSs0dkY1Kzcwb0hzc1JOdmZkUjN4ZmNSRWg5ZUNqbXZZWW00RmFZSFAxMzcK",
+      "endpoints": [
+        "https://github.com/akhshyganesh/tracko/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
     }
   }
 }
