@@ -90,10 +90,11 @@ The download icon at the bottom of the sidebar checks this repo's GitHub Release
 
 ### All three OSes at once
 
-`.github/workflows/build.yml` builds on GitHub's Windows, macOS and Linux machines. It covers macOS on Apple Silicon and Intel, and Linux on x64 and ARM.
+`.github/workflows/build.yml` builds on GitHub's Windows, macOS and Linux machines. It covers macOS on Apple Silicon (Intel Macs aren't built), Windows on x64, and Linux on x64 and ARM.
 
+- Every push to `main` and every pull request builds the installers. Download them from the run's artifacts.
 - To get a draft release with every installer, push a tag: `git tag v0.1.0 && git push --tags`.
-- To get the files as build artifacts, run the workflow by hand from the Actions tab.
+- To build on demand, run the workflow by hand from the Actions tab.
 
 Signing needs an Apple Developer ID and a Windows code-signing certificate, both added as GitHub secrets. See [Tauri's distribution guide](https://tauri.app/distribute/).
 

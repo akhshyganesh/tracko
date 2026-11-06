@@ -1,12 +1,18 @@
-# Builds tracko for Windows, macOS (Apple Silicon + Intel) and Linux (x64 + ARM).
-# Push a tag like v0.1.0 to create a draft GitHub release with all installers,
-# or run it by hand from the Actions tab to just get the files as build artifacts.
+# Builds tracko for Windows, macOS (Apple Silicon) and Linux (x64 + ARM).
+# Pushes to main, pull requests and manual runs build the installers as artifacts.
+# A tag like v0.1.0 also creates a draft GitHub release with all installers.
 name: build
 
 on:
   push:
+    branches: [main]
     tags: ['v*']
+  pull_request:
   workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_type != 'tag' }}
 
 jobs:
   build:
@@ -17,7 +23,6 @@ jobs:
       matrix:
         include:
           - { os: macos-latest, target: aarch64-apple-darwin, name: macos-arm64 }
-          - { os: macos-latest, target: x86_64-apple-darwin, name: macos-x64 }
           - { os: windows-latest, target: x86_64-pc-windows-msvc, name: windows-x64 }
           - { os: ubuntu-22.04, target: x86_64-unknown-linux-gnu, name: linux-x64 }
           - { os: ubuntu-22.04-arm, target: aarch64-unknown-linux-gnu, name: linux-arm64 }
