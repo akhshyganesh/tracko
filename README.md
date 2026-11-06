@@ -10,7 +10,7 @@ It's a small desktop app for Windows, macOS and Linux, built with [Tauri](https:
 
 Download the installer for your OS from the [latest release](https://github.com/akhshyganesh/tracko/releases/latest).
 
-The macOS and Windows builds aren't code-signed yet. On macOS, right-click the app and choose Open the first time. On Windows, SmartScreen asks you to confirm.
+The macOS and Windows builds aren't code-signed yet. On macOS, the first launch is blocked; open System Settings > Privacy & Security and click Open Anyway. On Windows, SmartScreen asks you to confirm.
 
 ## What's in it
 
@@ -34,7 +34,7 @@ tracko can get replies from any of these. Settings > General > Connections shows
 
 All three use the same tracko tools: `file_items`, `update_items`, `move_chat`, `ask_bucket`, `create_bucket`, `save_memory`, `search_history` and `show_items`.
 
-- **Harnesses are kept away from your files.** Claude Code and Codex run in an empty folder. Their own file and shell tools are off, and Claude Code skips your personal settings and `CLAUDE.md`. tracko only starts the programs named `claude` and `codex`. It finds them on your PATH and in the usual install folders, or you can paste a path.
+- **Harnesses run with as little access as each one allows.** Both start in an empty folder. Claude Code runs with its own tools off and skips your personal settings and `CLAUDE.md`. Codex runs in its read-only sandbox. It can't change files, but it can run read-only commands and read any file your account can. tracko only starts programs named exactly `claude` or `codex`. It finds them on your PATH and in the usual install folders, or you can paste a path.
 - **The local MCP server** listens on `127.0.0.1` only and needs a random token that changes every launch.
 - **Cost.** Harness replies come out of your Claude or ChatGPT plan, so Usage shows their tokens but no dollar cost. API key replies show their cost.
 - **Choosing a model and effort.** The model picker lists the models of every connected provider, and picking one also picks the provider. Next to it is the effort picker.
